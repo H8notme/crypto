@@ -52,7 +52,7 @@
         }
         
         async function fetchCoins() {
-            const coinRange = "Sheet1!A2:D";
+            const coinRange = "Sheet1!A2:E"; // Fetching one more column for Supply Left
             const coinUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${coinRange}?key=${apiKey}`;
             try {
                 const response = await fetch(coinUrl);
@@ -61,7 +61,7 @@
                 coinList.innerHTML = "";
                 if (data.values) {
                     data.values.forEach(row => {
-                        const [name, price, supply, description] = row;
+                        const [name, price, supply, supplyLeft, description] = row;
                         const coinItem = document.createElement("div");
                         coinItem.className = "card";
                         let logoSrc = "https://raw.githubusercontent.com/H8notme/crypto/main/la-pum-pum-logo.webp";
@@ -69,6 +69,7 @@
                                                  <h2>${name}</h2>
                                                  <p><strong>Price:</strong> Rs ${price}</p>
                                                  <p><strong>Supply:</strong> ${supply} coins</p>
+                                                 <p><strong>Supply Left:</strong> ${supplyLeft} coins</p>
                                                  <p>${description}</p>`;
                         coinList.appendChild(coinItem);
                     });
@@ -79,50 +80,8 @@
             }
         }
         
-        async function fetchUserPortfolio() {
-            const userName = getQueryParam("user");
-            if (!userName) {
-                document.getElementById("portfolio-title").innerText = "User not specified";
-                document.getElementById("portfolio").innerHTML = "Please provide a user name in the URL, e.g., ?user=John%20Wick";
-                return;
-            }
-            document.getElementById("portfolio-title").innerText = `${userName}'s Portfolio`;
-            
-            const portfolioList = document.getElementById("portfolio");
-            portfolioList.innerHTML = "";
-            try {
-                const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}`;
-                const sheetsResponse = await fetch(sheetsUrl);
-                const sheetsData = await sheetsResponse.json();
-                if (sheetsData.sheets) {
-                    for (let sheet of sheetsData.sheets) {
-                        const sheetName = sheet.properties.title;
-                        const ownershipUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A2:B?key=${apiKey}`;
-                        const ownershipResponse = await fetch(ownershipUrl);
-                        const ownershipData = await ownershipResponse.json();
-                        if (ownershipData.values) {
-                            ownershipData.values.forEach(row => {
-                                const [owner, amount] = row;
-                                if (owner.toLowerCase() === userName.toLowerCase()) {
-                                    const portfolioItem = document.createElement("div");
-                                    portfolioItem.className = "card";
-                                    portfolioItem.innerHTML = `<h2>${sheetName}</h2>
-                                                              <p><strong>Owned:</strong> ${amount} coins</p>`;
-                                    portfolioList.appendChild(portfolioItem);
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching portfolio data:", error);
-                document.getElementById("portfolio").innerHTML = "Failed to load portfolio data.";
-            }
-        }
-        
         window.onload = function () {
             fetchCoins();
-            fetchUserPortfolio();
         };
     </script>
 </head>
@@ -130,9 +89,6 @@
     <h1>Crypto Marketplace</h1>
     <p>Welcome to the crypto marketplace! Browse available coins below:</p>
     <div id="coin-list">Loading...</div>
-    
-    <h1 id="portfolio-title">Your Portfolio</h1>
-    <p>Here are the coins you own:</p>
-    <div id="portfolio">Loading...</div>
 </body>
 </html>
+
