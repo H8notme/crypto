@@ -83,7 +83,7 @@
             const userName = getQueryParam("user");
             if (!userName) {
                 document.getElementById("portfolio-title").innerText = "User not specified";
-                document.getElementById("portfolio").innerHTML = "Please provide a user name in the URL, e.g., ?user=Shameer%20Mumtaz";
+                document.getElementById("portfolio").innerHTML = "Please provide a user name in the URL, e.g., ?user=John%20Wick";
                 return;
             }
             document.getElementById("portfolio-title").innerText = `${userName}'s Portfolio`;
