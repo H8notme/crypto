@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Marketplace</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #coin-list, #portfolio {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: left;
+        }
+        .card h2 {
+            margin: 0;
+            color: #007bff;
+        }
+        .card p {
+            margin: 5px 0;
+        }
+        .coin-logo {
+            width: 100px;
+            display: block;
+            margin: 10px auto;
+        }
+    </style>
+    <script>
+        const sheetId = "1onN7BBS5uWsVIescck9vX3TL2OdDgfEfG7dFeTUcDyw";
+        const apiKey = "AIzaSyCKNpApIUfmUPxslWBM9jC-IZOGK2pJJVQ";
+        
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        
+        async function fetchCoins() {
+            const coinRange = "Sheet1!A2:D";
+            const coinUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${coinRange}?key=${apiKey}`;
+            try {
+                const response = await fetch(coinUrl);
+                const data = await response.json();
+                const coinList = document.getElementById("coin-list");
+                coinList.innerHTML = "";
+                if (data.values) {
+                    data.values.forEach(row => {
+                        const [name, price, supply, description] = row;
+                        const coinItem = document.createElement("div");
+                        coinItem.className = "card";
+                        let logoSrc = "https://raw.githubusercontent.com/H8notme/crypto/main/la-pum-pum-logo.webp";
+                        coinItem.innerHTML = `${logoSrc ? `<img src='${logoSrc}' class='coin-logo' alt='${name} Logo'>` : ""}
+                                                 <h2>${name}</h2>
+                                                 <p><strong>Price:</strong> Rs ${price}</p>
+                                                 <p><strong>Supply:</strong> ${supply} coins</p>
+                                                 <p>${description}</p>`;
+                        coinList.appendChild(coinItem);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching coin data:", error);
+                document.getElementById("coin-list").innerHTML = "Failed to load coin data.";
+            }
+        }
+        
+        async function fetchUserPortfolio() {
+            const userName = getQueryParam("user");
+            if (!userName) {
+                document.getElementById("portfolio-title").innerText = "User not specified";
+                document.getElementById("portfolio").innerHTML = "Please provide a user name in the URL, e.g., ?user=Shameer%20Mumtaz";
+                return;
+            }
+            document.getElementById("portfolio-title").innerText = `${userName}'s Portfolio`;
+            
+            const portfolioList = document.getElementById("portfolio");
+            portfolioList.innerHTML = "";
+            try {
+                const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}`;
+                const sheetsResponse = await fetch(sheetsUrl);
+                const sheetsData = await sheetsResponse.json();
+                if (sheetsData.sheets) {
+                    for (let sheet of sheetsData.sheets) {
+                        const sheetName = sheet.properties.title;
+                        const ownershipUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A2:B?key=${apiKey}`;
+                        const ownershipResponse = await fetch(ownershipUrl);
+                        const ownershipData = await ownershipResponse.json();
+                        if (ownershipData.values) {
+                            ownershipData.values.forEach(row => {
+                                const [owner, amount] = row;
+                                if (owner.toLowerCase() === userName.toLowerCase()) {
+                                    const portfolioItem = document.createElement("div");
+                                    portfolioItem.className = "card";
+                                    portfolioItem.innerHTML = `<h2>${sheetName}</h2>
+                                                              <p><strong>Owned:</strong> ${amount} coins</p>`;
+                                    portfolioList.appendChild(portfolioItem);
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching portfolio data:", error);
+                document.getElementById("portfolio").innerHTML = "Failed to load portfolio data.";
+            }
+        }
+        
+        window.onload = function () {
+            fetchCoins();
+            fetchUserPortfolio();
+        };
+    </script>
+</head>
+<body>
+    <h1>Crypto Marketplace</h1>
+    <p>Welcome to the crypto marketplace! Browse available coins below:</p>
+    <div id="coin-list">Loading...</div>
+    
+    <h1 id="portfolio-title">Your Portfolio</h1>
+    <p>Here are the coins you own:</p>
+    <div id="portfolio">Loading...</div>
+</body>
+</html>
